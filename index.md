@@ -6,7 +6,7 @@ It can import data from CSV—comma separated values—files and merge them into
 
 The main case for automated document generation is mail–merging.
 
-# Minimal Sample
+## Minimal Sample
 
 Imagine you need a list full of lines following the pattern:
 
@@ -40,12 +40,12 @@ The resulting content in the PDF document will be:
 >
 >Jane Amr was born on 03/03/92.
 
-# Issues
+## Issues
 
 If you have anything to say about `handlecsv`, please [open an issue](https://github.com/ousia/handlecsv/issues/new).
 
 Issue reporting requires a _GitHub_ account. And please, don’t forget that all commments in all issues are public by default.
 
-# License
+## License
 
 `handlecsv` is released under the [GNU General Public License version 3](https://gnu.org/licenses/gpl-3.0.html).

@@ -3,9 +3,9 @@
 
 @import "{{ site.theme }}";
 
-
+body {
+  padding: 0%;
+}
 code, pre {
-	font-family: Monaco, "Bitstream Vera Sans Mono", "Lucida Console", Terminal, monospace;
-  color:#000;
   font-size:100%;
 }
