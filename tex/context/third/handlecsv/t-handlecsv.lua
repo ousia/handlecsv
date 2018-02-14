@@ -1,6 +1,6 @@
 -- %D \module
 -- %D   [     file=t-handlecsv.lua,
--- %D      version=2017.10.19,
+-- %D      version=2018.02.14,
 -- %D        title=HandleCSV module,
 -- %D     subtitle=CSV file handling,
 -- %D       author=Jaroslav Hajtmar,
@@ -9,7 +9,7 @@
 -- %D        email=hajtmar@gyza.cz,
 -- %D      license=GNU General Public License]
 --
--- %C Copyright (C) 2017  Jaroslav Hajtmar
+-- %C Copyright (C) 2018  Jaroslav Hajtmar
 -- %C
 -- %C This program is free software: you can redistribute it and/or modify
 -- %C it under the terms of the GNU General Public License as published by
@@ -35,28 +35,28 @@ thirddata.handlecsv = { -- Global variables
 --  gCSVQuoter
     gUserCSVQuoter='"', --
 --	 gCSVHeader
-	 gUserCSVHeader=false, -- CSV file is by default considered as a CSV file without the header (in header are treated as column names of macros
-	 gUserUseHooks=false, -- In default setting is not use "hooks" when process CSV file
+	gUserCSVHeader=false, -- CSV file is by default considered as a CSV file without the header (in header are treated as column names of macros
+	gUserUseHooks=false, -- In default setting is not use "hooks" when process CSV file
     gUserColumnNumbering='XLS',  -- Something other than the XLS or undefined variable value (eg commenting that line) to set the Roman numbering ...
     gCurrentlyProcessedCSVFile=nil,
---  gMarkingEmptyLines
-     gUserMarkingEmptyLines=false, -- if true, then module mark empty rows in CSV file else module accept empty lines as regular lines
-	 gTableEmptyRows={}, -- array of indexes of empty lines of CSV table -> gTableEmptyRows[1]= 3 etc
-	 gTableNotEmptyRows={}, -- array of indexes of nonempty lines of CSV table -> gTableNotEmptyRows[1]= 3 etc
-	 gNumEmptyRows=0, -- number of empty rows
-	 gCSVHandleBuffer={}, -- temporary buffer
+  	gMarkingEmptyLines=false,
+    gUserMarkingEmptyLines=false, -- if true, then module mark empty rows in CSV file else module accept empty lines as regular lines
+	gTableEmptyRows={}, -- array of indexes of empty lines of CSV table -> gTableEmptyRows['csvfilename'][1]= 3 etc
+	gTableNotEmptyRows={}, -- array of indexes of nonempty lines of CSV table -> gTableNotEmptyRows['csvfilename'][1]= 3 etc
+	gCSVHandleBuffer={}, -- temporary buffer
 -- NEW variables
-     gOpenFiles={}, -- array of all opened files
-	 gTableRows={}, -- array of contents of cells of CSV table -> gTableRows[csvfilename][row][column]
-     gNumLine={}, -- global variable -      gNumLine['csvfilename.csv']=0
-     gNumRows={}, -- global variable  - save number of rows of csv table: gNumRows['csvfilename']=0
-     gNumCols={}, -- global variable  - save number of columns of csv table: gNumCols['csvfilename']=0
-     gCurrentLinePointer={}, -- ie. CSV line number ie. number of the currently processed row: gCurrentLinePointer['csvfilename']=0
-     gColumnNames={}, -- array with column names (readings from header of CSV file): gColumnNames['csvfilename']
-     gColNames={}, -- associative array with column names for indexing use f.e. gColNames['csvfilename']['Firstname']=1, etc...
-	 gTableRows={}, -- array of contents of cells of CSV table -> gTableRows['csvfilename'][row][column]
-	 gTableRowsIndex={}, -- array of flags of lines of CSV table -> gTableEmptyRowsIndex['csvfilename'][i]= true or false
-	 gSavedLinePointerNo=1, -- global variable to keep the line number
+    gOpenFiles={}, -- array of all opened files
+    gNumLine={}, -- global variable -      gNumLine['csvfilename.csv']=0
+    gNumRows={}, -- global variable  - save number of rows of csv table: gNumRows['csvfilename']=0
+	gNumEmptyRows={},  -- global variable  - save number of empty rows of csv table: gNumEmptyRows['csvfilename']=0
+	gNumNotEmptyRows={},  -- global variable  - save number of empty rows of csv table: gNumNotEmptyRows['csvfilename']=0
+    gNumCols={}, -- global variable  - save number of columns of csv table: gNumCols['csvfilename']=0
+    gCurrentLinePointer={}, -- ie. CSV line number ie. number of the currently processed row: gCurrentLinePointer['csvfilename']=0
+    gColumnNames={}, -- array with column names (readings from header of CSV file): gColumnNames['csvfilename']
+    gColNames={}, -- associative array with column names for indexing use f.e. gColNames['csvfilename']['Firstname']=1, etc...
+	gTableRows={}, -- array of contents of cells of CSV table -> gTableRows['csvfilename'][row][column]
+	gTableRowsIndex={}, -- array of flags of lines of CSV table -> gTableEmptyRowsIndex['csvfilename'][i]= true or false
+	gSavedLinePointerNo=1, -- global variable to keep the line number
 }
 
 local setmacro = interfaces.setmacro or ""
@@ -218,20 +218,24 @@ function thirddata.handlecsv.unsetsep()
 end
 
 function thirddata.handlecsv.indexofnotemptyline(sernumline)
-	context(thirddata.handlecsv.gTableNotEmptyRows[sernumline])
-	return thirddata.handlecsv.gTableNotEmptyRows[sernumline]
+local csvfilename=thirddata.handlecsv.getcurrentcsvfilename()
+	return thirddata.handlecsv.gTableNotEmptyRows[csvfilename][sernumline]
 end
 
 function thirddata.handlecsv.indexofemptyline(sernumline)
-	context(thirddata.handlecsv.gTableEmptyRows[sernumline])
-	return thirddata.handlecsv.gTableEmptyRows[sernumline]
+local csvfilename=thirddata.handlecsv.getcurrentcsvfilename()
+	return thirddata.handlecsv.gTableEmptyRows[csvfilename][sernumline]
 end
 
 function thirddata.handlecsv.notmarkemptylines()
- thirddata.handlecsv.gMarkingEmptyLines=false
-   for row=1,thirddata.handlecsv.gNumRows[thirddata.handlecsv.getcurrentcsvfilename()] do
-		thirddata.handlecsv.gTableNotEmptyRows[row]=row
+local csvfilename=thirddata.handlecsv.getcurrentcsvfilename()
+   thirddata.handlecsv.gMarkingEmptyLines=false
+   for row=1,thirddata.handlecsv.gNumRows[csvfilename] do
+		thirddata.handlecsv.gTableNotEmptyRows[csvfilename][row]=row
      end
+ 	 thirddata.handlecsv.gTableEmptyRows[csvfilename]={}
+ 	 thirddata.handlecsv.gNumEmptyRows[csvfilename]=0
+	 thirddata.handlecsv.gNumNotEmptyRows[csvfilename]=thirddata.handlecsv.gNumRows[csvfilename]
 	 context([[\global\emptylinefalse%]])
 	 context([[\global\notemptylinetrue%]])
 	 context([[\global\emptylinesmarkingfalse%]])
@@ -239,18 +243,23 @@ function thirddata.handlecsv.notmarkemptylines()
 end
 
 function thirddata.handlecsv.markemptylines()
- thirddata.handlecsv.gMarkingEmptyLines=true
+local csvfilename=thirddata.handlecsv.getcurrentcsvfilename()
+ 	thirddata.handlecsv.gTableEmptyRows[csvfilename]={}
+ 	thirddata.handlecsv.gTableNotEmptyRows[csvfilename]={}
+	thirddata.handlecsv.gMarkingEmptyLines=true
  	 local counteremptylines=0
 	 local counternotemptylines=0
-	  for row=1,thirddata.handlecsv.gNumRows[thirddata.handlecsv.getcurrentcsvfilename()] do
+	  for row=1,thirddata.handlecsv.gNumRows[csvfilename] do
 			if thirddata.handlecsv.testemptyrow(row) then
 				counteremptylines=counteremptylines+1
-				thirddata.handlecsv.gTableEmptyRows[counteremptylines]=row
+				thirddata.handlecsv.gTableEmptyRows[csvfilename][counteremptylines]=row
 			else
 				counternotemptylines=counternotemptylines+1
-				thirddata.handlecsv.gTableNotEmptyRows[counternotemptylines]=row
+				thirddata.handlecsv.gTableNotEmptyRows[csvfilename][counternotemptylines]=row
 			end
 	  end -- for
+	  thirddata.handlecsv.gNumEmptyRows[csvfilename]=counteremptylines
+	  thirddata.handlecsv.gNumNotEmptyRows[csvfilename]=counternotemptylines
 	  context([[\global\emptylinesmarkingtrue%]])
 	  context([[\global\emptylinesnotmarkingfalse%]])
 end
@@ -258,6 +267,7 @@ end
 
 function thirddata.handlecsv.resetmarkemptylines()
 -- do following lines only when file contain completely empty rows and is requiring testing empty lines
+local csvfilename=thirddata.handlecsv.getcurrentcsvfilename()
 	thirddata.handlecsv.gMarkingEmptyLines = thirddata.handlecsv.gUserMarkingEmptyLines
 	 if thirddata.handlecsv.gMarkingEmptyLines then
 	    thirddata.handlecsv.markemptylines()
@@ -267,16 +277,17 @@ end
 
 
 function thirddata.handlecsv.testemptyrow(lineindex)
+local csvfilename=thirddata.handlecsv.getcurrentcsvfilename()
 local linecontent=""
 local isemptyline=false
-	for column=1,thirddata.handlecsv.gNumCols[thirddata.handlecsv.getcurrentcsvfilename()] do
-		linecontent=linecontent..thirddata.handlecsv.gTableRows[thirddata.handlecsv.getcurrentcsvfilename()][lineindex][column]
+	for column=1,thirddata.handlecsv.gNumCols[csvfilename] do
+		linecontent=linecontent..thirddata.handlecsv.gTableRows[csvfilename][lineindex][column]
 	end
 	if linecontent=="" or linecontent==nil then
 		isemptyline=true
-		thirddata.handlecsv.gNumEmptyRows=thirddata.handlecsv.gNumEmptyRows+1
+--		thirddata.handlecsv.gNumEmptyRows[csvfilename]=thirddata.handlecsv.gNumEmptyRows[csvfilename]+1
 	end
-	thirddata.handlecsv.gTableRowsIndex[thirddata.handlecsv.getcurrentcsvfilename()][lineindex]=isemptyline
+	thirddata.handlecsv.gTableRowsIndex[csvfilename][lineindex]=isemptyline
  return isemptyline
 end
 
@@ -290,6 +301,31 @@ function thirddata.handlecsv.emptylineevaluation(lineindex)
 	 context([[\global\notemptylinetrue%]])
 	end
 	return thirddata.handlecsv.gTableRowsIndex[thirddata.handlecsv.getcurrentcsvfilename()][lineindex]
+end
+
+
+-- This function remove empty rows only from field of variables thirddata.handlecsv.gTableRows!
+-- The field is only re-indexed and function does not affect onto the physical input CSV file!
+-- When the physical CSV file is reopened by using \open macro, the global field variable
+-- thirddata.handlecsv.gTableRows[csvfile] is reset into original state!
+function thirddata.handlecsv.removeemptylines()
+	thirddata.handlecsv.markemptylines()
+	local csvfilename=thirddata.handlecsv.getcurrentcsvfilename()
+
+	for i=1,thirddata.handlecsv.gNumNotEmptyRows[csvfilename] do
+		local indexofnotemptyrow=thirddata.handlecsv.gTableNotEmptyRows[csvfilename][i]
+		-- i<--indexofnotemptyrow
+		thirddata.handlecsv.gTableRows[csvfilename][i]=thirddata.handlecsv.gTableRows[csvfilename][indexofnotemptyrow]
+	end
+
+	for i=thirddata.handlecsv.gNumNotEmptyRows[csvfilename]+1,thirddata.handlecsv.gNumRows[csvfilename] do
+		thirddata.handlecsv.gTableRows[csvfilename][i]=nil
+	end
+
+	thirddata.handlecsv.gNumRows[csvfilename]=thirddata.handlecsv.gNumNotEmptyRows[csvfilename]
+	thirddata.handlecsv.markemptylines()
+	thirddata.handlecsv.gTableEmptyRows[csvfilename]={}
+	thirddata.handlecsv.gTableNotEmptyRows[csvfilename]={}
 end
 
 
@@ -336,6 +372,11 @@ function thirddata.handlecsv.isopenfile(csvfilename) -- testing of opening CSV f
    return retval
 end
 
+function thirddata.handlecsv.closecsvfile(csvfilename) -- manual closing of CSV files
+  thirddata.handlecsv.gOpenFiles[csvfilename] = nil
+end
+
+
 function thirddata.handlecsv.getnumberofopencsvfiles() -- get the number of open files
 local count = 0
 for k, v in pairs(thirddata.handlecsv.gOpenFiles) do
@@ -353,8 +394,7 @@ function thirddata.handlecsv.setpointersofopeningcsvfile(inpcsvfile)
  thirddata.handlecsv.setnumlineof(inpcsvfile,1)
  context([[\global\EOFfalse%]])
  context([[\global\notEOFtrue%]])
--- Nyní vyřešit tohleto:
---  	 thirddata.handlecsv.resetmarkemptylines()
+ thirddata.handlecsv.resetmarkemptylines()
 end
 
 function thirddata.handlecsv.opencsvfile(filetoscan) -- Open CSV tabule, inicialize variables
@@ -373,12 +413,12 @@ function thirddata.handlecsv.opencsvfile(filetoscan) -- Open CSV tabule, inicial
 
 		local inpcsvfile=thirddata.handlecsv.setgetcurrentcsvfile(inpcsvfile)
 		thirddata.handlecsv.gOpenFiles[inpcsvfile]=inpcsvfile -- memory opening file
-		thirddata.handlecsv.gNumEmptyRows=0
-
 		thirddata.handlecsv.gColNames[inpcsvfile]={}
 		thirddata.handlecsv.gColumnNames[inpcsvfile]={}
 		thirddata.handlecsv.gTableRowsIndex[inpcsvfile]={}
 		thirddata.handlecsv.gTableRows[inpcsvfile]={}
+ 		thirddata.handlecsv.gTableEmptyRows[inpcsvfile]={}
+ 		thirddata.handlecsv.gTableNotEmptyRows[inpcsvfile]={}
 
 
 		local currentlyprocessedcsvfile = io.loaddata(inpcsvfile)
@@ -427,7 +467,8 @@ function thirddata.handlecsv.opencsvfile(filetoscan) -- Open CSV tabule, inicial
 
 		thirddata.handlecsv.gNumRows[inpcsvfile]=#thirddata.handlecsv.gTableRows[inpcsvfile] -- Getting number of rows
 		thirddata.handlecsv.gNumCols[inpcsvfile]=#thirddata.handlecsv.gTableRows[inpcsvfile][1] -- Getting number of columns
-
+		thirddata.handlecsv.gNumEmptyRows[inpcsvfile]=0
+		thirddata.handlecsv.gNumNotEmptyRows[inpcsvfile]=#thirddata.handlecsv.gTableRows[inpcsvfile]
 		thirddata.handlecsv.setpointersofopeningcsvfile(inpcsvfile) 		-- set pointers
 
 		if thirddata.handlecsv.gUseHooks then  thirddata.handlecsv.hooksevaluation() end
@@ -806,28 +847,25 @@ end
 
 
 function thirddata.handlecsv.numemptyrows()
--- context(thirddata.handlecsv.gNumEmptyRows)
-  return thirddata.handlecsv.gNumEmptyRows
+ return thirddata.handlecsv.gNumEmptyRows[thirddata.handlecsv.getcurrentcsvfilename()]
 end
 
 
 function thirddata.handlecsv.numnotemptyrows()
--- context(thirddata.handlecsv.gNumRows[thirddata.handlecsv.getcurrentcsvfilename()]-thirddata.handlecsv.gNumEmptyRows)
-  return thirddata.handlecsv.gNumRows[thirddata.handlecsv.getcurrentcsvfilename()]-thirddata.handlecsv.gNumEmptyRows
+return thirddata.handlecsv.gNumRows[thirddata.handlecsv.getcurrentcsvfilename()]-thirddata.handlecsv.gNumEmptyRows[thirddata.handlecsv.getcurrentcsvfilename()]
 end
 
 
 
 function thirddata.handlecsv.numcolsof(csvfile)
 local csvfile=thirddata.handlecsv.handlecsvfile(csvfile)
--- context(thirddata.handlecsv.gNumCols[csvfile])
-  return thirddata.handlecsv.gNumCols[csvfile]
+  context(thirddata.handlecsv.gNumCols[csvfile])
 end
 
 function thirddata.handlecsv.numcols()
 local csvfile=thirddata.handlecsv.getcurrentcsvfilename()
--- context(thirddata.handlecsv.gNumCols[csvfile])
-  return thirddata.handlecsv.numcolsof(csvfile)
+  context(thirddata.handlecsv.gNumCols[csvfile])
+-- thirddata.handlecsv.numcolsof(csvfile)
 end
 
 
@@ -1055,11 +1093,12 @@ local string2print=[[%
 \let\savelineno\savelinepointer % synonym
 \def\setsavedlinepointer{\ctxlua{thirddata.handlecsv.setsavedlinepointer()}}
 \let\setsavedlineno\setsavedlinepointer % synonym
-\def\indexofnotemptyline#1{\ctxlua{thirddata.handlecsv.indexofnotemptyline(#1)}}
-\def\indexofemptyline#1{\ctxlua{thirddata.handlecsv.indexofemptyline(#1)}}
+\def\indexofnotemptyline#1{\ctxlua{context(thirddata.handlecsv.indexofnotemptyline(#1))}}
+\def\indexofemptyline#1{\ctxlua{context(thirddata.handlecsv.indexofemptyline(#1))}}
 \def\notmarkemptylines{\ctxlua{thirddata.handlecsv.notmarkemptylines()}}
 \def\markemptylines{\ctxlua{thirddata.handlecsv.markemptylines()}}
 \def\resetmarkemptylines{\ctxlua{thirddata.handlecsv.resetmarkemptylines()}}%
+\def\removeemptylines{\ctxlua{thirddata.handlecsv.removeemptylines()}}%
 \def\nextlineof[#1]{\ctxlua{thirddata.handlecsv.nextlineof('#1')}} % -- macro for skip to next line. \nextlineof no read data from current line unlike \nextrow macro.
 \def\nextline{\ctxlua{thirddata.handlecsv.nextline()}} % -- macro for skip to next line. \nextline no read data from current line unlike \nextrow macro.
 \def\prevlineof[#1]{\ctxlua{thirddata.handlecsv.previouslineof('#1')}} % -- macro for skip to previous line. \prevlineof no read data from current line unlike \prevrowof macro.
@@ -1096,6 +1135,9 @@ local string2print=[[%
    \fi%
 }%
 
+
+% manual closing of CSV file
+\def\closecsvfile#1{\ctxlua{thirddata.handlecsv.closecsvfile("#1")}}
 
 % Read data from n-th line of CSV table. Calling without parameter read current line (pointered by global variable)
 \def\readline{\dosingleempty\doreadline}%
@@ -1295,11 +1337,12 @@ local string2print=[[%
 % \numline, \setnumline{<numberofline>}, \resetnumline
 % \addtonumline{<number>}
 % \indexofnotemptyline{}, \indexofemptyline{}
+% \markemptylines, \notmarkemptylines, \resetmarkemptylines, \removeemptylines
 % \nextlineof[csvfile], \prevlineof[csvfile], \nextline, \prevline
 % \nextnumline
 % \nextrowof[csvfile], \prevrowof[csvfile], \nextrow, \prevrow
 % \exitlooptest
-% \opencsvfile, \opencsvfile{<filename>}
+% \opencsvfile, \opencsvfile{<filename>}, \closecsvfile{<filename>}
 % \readline, \readline{<numberofline>}
 % \readandprocessparameters#1#2#3#4 -- for internal use only
 %
