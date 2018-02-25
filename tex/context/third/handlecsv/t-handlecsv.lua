@@ -9,7 +9,7 @@
 -- %D        email=hajtmar@gyza.cz,
 -- %D      license=GNU General Public License]
 --
--- %C Copyright (C) 2018  Jaroslav Hajtmar
+-- %C Copyright (C) 2018 Jaroslav Hajtmar
 -- %C
 -- %C This program is free software: you can redistribute it and/or modify
 -- %C it under the terms of the GNU General Public License as published by
@@ -1014,31 +1014,41 @@ local string2print=[[%
 
 
 
-% Get content of specific cell of CSV table. Calling: \csvcell[column number,row number] OR \csvcell['ColumnName',row number]
+% Get content of specific cell of CSV table.
+% Calling: \csvcell[column number,row number] OR \csvcell['ColumnName',row number]
 \def\getcsvcell[#1,#2]{\ctxlua{context(thirddata.handlecsv.getcellcontent(#1,#2))}}%
 %%%%%\def\getcsvcell[#1,#2]{\if!#2!\ctxlua{context(thirddata.handlecsv.getcellcontent(#1,thirddata.handlecsv.gCurrentLinePointer[thirddata.handlecsv.getcurrentcsvfilename()]))}\else\ctxlua{context(thirddata.handlecsv.getcellcontent(#1,#2))}\fi}%
 
-% Get content of specific cell of CSV table. Calling: \csvcell[column number,row number] OR \csvcell['ColumnName',row number]
+% Get content of specific cell of CSV table in file.
+% Calling: \getcsvcellof[file][column number,row number] OR \getcsvcellof[file]['ColumnName',row number]
 \def\getcsvcellof[#1][#2,#3]{\ctxlua{context(thirddata.handlecsv.getcellcontentof("#1",#2,#3))}}%
 
 
-% Get content of specific cell of CSV table. Calling: \csvcell[column number,row number or row number getting from macro] OR \csvcell['ColumnName',row number or row number getting from macro]
+% Get content of specific cell of CSV table. 
+% Calling: \csvcell[column number,row number or row number getting from macro] OR \csvcell['ColumnName',row number or row number getting from macro]
 \def\csvcell[#1,#2]{\getcsvcell[#1,\the\numexpr(#2+0)]}%
 %\def\csvcell\getcsvcell
 
 
-% Get content of specific cell of current line of CSV table. Calling: \currentcell{column number} OR \currentcell{'ColumnName'}
+% Get content of specific cell of current line of CSV table.
+% Calling: \currentcell{column number} OR \currentcell{'ColumnName'}
 \def\currentcsvcell#1{\getcsvcell[#1,\thenumexpr{\linepointer}]}%
 \let\currcell\currentcsvcell
 
-% Get content of specific cell of next line of CSV table. Calling: \nextcell{column number} OR \nextcell{'ColumnName'}
+% Get content of specific cell of next line of CSV table.
+% Calling: \nextcell{column number} OR \nextcell{'ColumnName'}
 \def\nextcsvcell#1{\ifnum\linepointer<\numrows{\getcsvcell[#1,\thenumexpr{\linepointer+1}]}\fi}%
 \let\nextcell\nextcsvcell
 
-% Get content of specific cell of previous line of CSV table. Calling: \previouscell{column number} OR \previouscell{'ColumnName'}
+% Get content of specific cell of previous line of CSV table.
+% Calling: \previouscell{column number} OR \previouscell{'ColumnName'}
 \def\previouscsvcell#1{\ifnum\linepointer>1{\getcsvcell[#1,\thenumexpr{\linepointer-1}]}\fi}%
 \let\prevcell\previouscsvcell
 
+% Get text content from cell in current row (removes commands, required for --argument)
+% Calling: \gettextfrom[column number]
+\def\gettextfrom[#1]{%
+    \ctxlua{context(thirddata.handlecsv.getcellcontent(#1,thirddata.handlecsv.linepointer()):gsub("\\",""))}}%
 
 % Get column name of n-th column of CSV table. When is set header, then get headername else get XLSname
 \def\colnameof[#1][#2]{\ctxlua{context(thirddata.handlecsv.gColumnNames['#1'][#2])}}%
@@ -1328,6 +1338,7 @@ local string2print=[[%
 % \getcsvcell[<columnnumber or columnname>,<rownumber>], \csvcell[<columnnumber or columnname>,<rownumber>]
 % \currentcell{<columnnumber or columnname}, \nextcell{<columnnumber or columnname}, \previouscell{<columnnumber or columnname}
 % and their synonyms \currcell{}, \nextcell{}, \prevcell{}
+% \gettextfrom[<columnumber>]
 % \colname[numberofcolumn], \xlscolname[<numberofcolumn>], \cxlscolname[<numberofcolumn>], \texcolname[<numberofcolumn>]
 % \indexcolname[<'columnname' or 'xlsname'>]
 % \columncontent[<numberofcolumn> or <'columnname'> or <'xlsname'>]
