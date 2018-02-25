@@ -1,6 +1,6 @@
 -- %D \module
 -- %D   [     file=t-handlecsv.lua,
--- %D      version=2018.02.14,
+-- %D      version=2018.02.25,
 -- %D        title=HandleCSV module,
 -- %D     subtitle=CSV file handling,
 -- %D       author=Jaroslav Hajtmar,
