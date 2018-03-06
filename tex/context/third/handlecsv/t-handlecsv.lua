@@ -1,6 +1,6 @@
 -- %D \module
 -- %D   [     file=t-handlecsv.lua,
--- %D      version=2018.02.25,
+-- %D      version=2018.02.26,
 -- %D        title=HandleCSV module,
 -- %D     subtitle=CSV file handling,
 -- %D       author=Jaroslav Hajtmar,
@@ -83,9 +83,8 @@ function thirddata.handlecsv.texmacroisdefined(macroname) -- check whether macro
   return token.get_cmdname(token.create(macroname)) ~= "undefined_cs"
 end
 
-
--- tool function ParseCSVLine is defined for compatibility. Parsing string (or line).
 function thirddata.handlecsv.ParseCSVLine(line,sep)
+-- tool function ParseCSVLine is defined for compatibility. Parsing string (or line).
 	local mycsvsplitter = utilities.parsers.rfc4180splitter{
 	    separator = sep,
 	    quote = '"',
@@ -168,10 +167,30 @@ function thirddata.handlecsv.ar2colnum(arnum) -- According to the settings glob.
    end
 end
 
+function thirddata.handlecsv.substitutecontentofcellof(csvfile,column,row,whattoreplace,substitution)
+-- Substitute text in cell content of specified CSV file with other text
+  local csvfile=thirddata.handlecsv.handlecsvfile(csvfile)
+  local column=thirddata.handlecsv.gColNames[csvfile][column]
+  local whattoreplace=tostring(whattoreplace)
+  local substitution=tostring(substitution)
+  return thirddata.handlecsv.getcellcontentof(csvfile,column,row):gsub(whattoreplace,substitution)
+end
 
+function thirddata.handlecsv.substitutecontentofcell(column,row,whattoreplace,substitution)
+-- Substitute text in cell content of current CSV file with other text
+  local csvfile=thirddata.handlecsv.getcurrentcsvfilename()
+  local column=thirddata.handlecsv.gColNames[csvfile][column]
+  return thirddata.handlecsv.substitutecontentofcellof(csvfile,column,row,whattoreplace,substitution)
+end
 
+function thirddata.handlecsv.substitutecontentofcellofcurrentrow(column,whattoreplace,substitution)
+-- Substitute text in cell content of current row of current CSV file with other text
+  local row=thirddata.handlecsv.linepointer()
+  return thirddata.handlecsv.substitutecontentofcell(column,row,whattoreplace,substitution)
+end
 
-function thirddata.handlecsv.processinputvalue(inputparameter,replacingnumber) -- when inputparameter is not correct, then return replacingnumber
+function thirddata.handlecsv.processinputvalue(inputparameter,replacingnumber)
+-- when inputparameter is not correct, then return replacingnumber
 local returnparameter=inputparameter
 	if type(inputparameter)~= 'number' then
 		returnparameter=replacingnumber
@@ -304,11 +323,11 @@ function thirddata.handlecsv.emptylineevaluation(lineindex)
 end
 
 
+function thirddata.handlecsv.removeemptylines()
 -- This function remove empty rows only from field of variables thirddata.handlecsv.gTableRows!
 -- The field is only re-indexed and function does not affect onto the physical input CSV file!
 -- When the physical CSV file is reopened by using \open macro, the global field variable
 -- thirddata.handlecsv.gTableRows[csvfile] is reset into original state!
-function thirddata.handlecsv.removeemptylines()
 	thirddata.handlecsv.markemptylines()
 	local csvfilename=thirddata.handlecsv.getcurrentcsvfilename()
 
@@ -341,7 +360,8 @@ function thirddata.handlecsv.hooksevaluation()
 end
 
 
-function thirddata.handlecsv.setgetcurrentcsvfile(filename) -- In the absence of the file name to use the global variable
+function thirddata.handlecsv.setgetcurrentcsvfile(filename)
+-- In the absence of the file name to use the global variable
 	 thirddata.handlecsv.gCurrentlyProcessedCSVFile = (filename ~= nil) and filename or thirddata.handlecsv.gCurrentlyProcessedCSVFile
 	 thirddata.handlecsv.gCurrentlyProcessedCSVFile = (thirddata.handlecsv.gCurrentlyProcessedCSVFile == nil) and filename or thirddata.handlecsv.gCurrentlyProcessedCSVFile
    local filename = filename ~= nil and filename or thirddata.handlecsv.gCurrentlyProcessedCSVFile
@@ -349,7 +369,8 @@ function thirddata.handlecsv.setgetcurrentcsvfile(filename) -- In the absence of
    return tostring(filename)
 end
 
-function thirddata.handlecsv.handlecsvfile(filename) -- not used yet
+function thirddata.handlecsv.handlecsvfile(filename)
+-- not used yet
 local filename  =  tostring(filename)
   filename = string.gsub(filename, '"', '')
   filename = string.gsub(filename, "'", "")
@@ -362,22 +383,26 @@ end
   return filename
 end
 
-function thirddata.handlecsv.getcurrentcsvfilename() -- return current (actual) CSV file
+function thirddata.handlecsv.getcurrentcsvfilename()
+-- return current (actual) CSV file
    return tostring(thirddata.handlecsv.gCurrentlyProcessedCSVFile)
 end
 
 
-function thirddata.handlecsv.isopenfile(csvfilename) -- testing of opening CSV files
+function thirddata.handlecsv.isopenfile(csvfilename)
+-- testing of opening CSV files
   local retval=(thirddata.handlecsv.gOpenFiles[csvfilename] ~= nil)
    return retval
 end
 
-function thirddata.handlecsv.closecsvfile(csvfilename) -- manual closing of CSV files
+function thirddata.handlecsv.closecsvfile(csvfilename)
+-- manual closing of CSV files
   thirddata.handlecsv.gOpenFiles[csvfilename] = nil
 end
 
 
-function thirddata.handlecsv.getnumberofopencsvfiles() -- get the number of open files
+function thirddata.handlecsv.getnumberofopencsvfiles()
+-- get the number of open files
 local count = 0
 for k, v in pairs(thirddata.handlecsv.gOpenFiles) do
      count = count + 1
@@ -397,7 +422,8 @@ function thirddata.handlecsv.setpointersofopeningcsvfile(inpcsvfile)
  thirddata.handlecsv.resetmarkemptylines()
 end
 
-function thirddata.handlecsv.opencsvfile(filetoscan) -- Open CSV tabule, inicialize variables
+function thirddata.handlecsv.opencsvfile(filetoscan)
+-- Open CSV tabule, inicialize variables
 	-- open the table and load it into the global variable thirddata.handlecsv.gTableRows[filetoscan]
 	-- if the option thirddata.handlecsv.gCSVHeader==true is enabled, then into glob variable thirddata.handlecsv.gColumnNames[filetoscan]
 	-- sets the column names from the title, if not then sets XLS notation, ie. cA, cB, cC, ...
@@ -478,12 +504,8 @@ return
 end -- of thirddata.handlecsv.opencsvfile(file)
 
 
-
-
-
-
--- Main function. Read data from specific line of specific file, parse them etc.
 function thirddata.handlecsv.readlineof(inpcsvfile,numberofline) --
+-- Main function. Read data from specific line of specific file, parse them etc.
     local inpcsvfile=thirddata.handlecsv.handlecsvfile(inpcsvfile)
 	local numberofline=numberofline
 	local returnpar=false
@@ -511,8 +533,8 @@ function thirddata.handlecsv.readlineof(inpcsvfile,numberofline) --
 end -- function thirddata.handlecsv.readlineof(inpcsvfile,numberofline) --
 
 
--- Main function. Read data from specific line of specific file, parse them etc.
 function thirddata.handlecsv.readline(numberofline) --
+-- Main function. Read data from specific line of specific file, parse them etc.
  local csvfile=thirddata.handlecsv.getcurrentcsvfilename()
   if type(numberofline) == 'number' then
 	thirddata.handlecsv.readlineof(csvfile,numberofline) --
@@ -520,8 +542,6 @@ function thirddata.handlecsv.readline(numberofline) --
    thirddata.handlecsv.readlineof(csvfile,thirddata.handlecsv.gCurrentLinePointer[csvfile]) --
   end
 end
-
-
 
 
 function thirddata.handlecsv.createxlscommandof(xlsname,csvfile)
@@ -567,9 +587,8 @@ thirddata.handlecsv.createxlscommandof(xlsname,inpcsvfile)
 end
 
 
-
--- after read of line this function put content of columns into specific TeX macros...
 function thirddata.handlecsv.assigncontentsof(inpcsvfile,line) -- put data into columns macros
+-- after read of line this function put content of columns into specific TeX macros...
 --if tex.modes['XXL'] then context("XXL mode") else context("not XXL mode") end
 	local inpcsvfile=thirddata.handlecsv.handlecsvfile(inpcsvfile)
 	local cutoffinpcsvfile=thirddata.handlecsv.ParseCSVLine(inpcsvfile,".")[1] -- cut filename extension
@@ -633,8 +652,8 @@ thirddata.handlecsv.assigncontentsof(thirddata.handlecsv.getcurrentcsvfilename()
 end
 
 
--- Read data from specific cell of specific the csv table
 function thirddata.handlecsv.getcellcontentof(csvfile,column,row)
+-- Read data from specific cell of specific the csv table
 	-- local returnparametr='nil'  -- 1.10.2015
 	local csvfile=thirddata.handlecsv.handlecsvfile(csvfile)
 	local returnparametr=''  -- 9.1.2016
@@ -647,7 +666,16 @@ function thirddata.handlecsv.getcellcontentof(csvfile,column,row)
 		else
 		   column=testcolumn
 		end
+	else
+		testcolumn=tonumber(column)
+		if testcolumn==nil then
+		  column=0
+		else
+		   column=testcolumn
+		end
 	end
+	if column<=0 then column=1 end
+	if column>thirddata.handlecsv.gNumCols[csvfile] then column=thirddata.handlecsv.gNumCols[csvfile] end
 	if type(row)=='string' then
 		local testrow=tonumber(row)
 		if testrow==nil then
@@ -667,16 +695,16 @@ function thirddata.handlecsv.getcellcontentof(csvfile,column,row)
 end
 
 
--- Read data from specific cell of current open csv table
 function thirddata.handlecsv.getcellcontent(column,row)
+-- Read data from specific cell of current open csv table
  local csvfile=thirddata.handlecsv.getcurrentcsvfilename()
  local returnparametr=thirddata.handlecsv.getcellcontentof(csvfile,column,row)
  return returnparametr
 end
 
 
--- Move line pointer to next line.
 function thirddata.handlecsv.nextlineof(csvfile)
+-- Move line pointer to next line.
   local csvfile=thirddata.handlecsv.handlecsvfile(csvfile)
   if thirddata.handlecsv.gCurrentLinePointer[csvfile] > thirddata.handlecsv.gNumRows[csvfile] then
   	 thirddata.handlecsv.gCurrentLinePointer[csvfile]=thirddata.handlecsv.gNumRows[csvfile]
@@ -689,14 +717,16 @@ function thirddata.handlecsv.nextlineof(csvfile)
   end
 end
 
--- Move line pointer to next line.
+
 function thirddata.handlecsv.nextline()
+-- Move line pointer to next line.
  local csvfile=thirddata.handlecsv.getcurrentcsvfilename()
  thirddata.handlecsv.nextlineof(csvfile)
 end
 
--- Move line pointer to previous line.
+
 function thirddata.handlecsv.previouslineof(csvfile)
+-- Move line pointer to previous line.
   local csvfile=thirddata.handlecsv.handlecsvfile(csvfile)
   if thirddata.handlecsv.gCurrentLinePointer[csvfile] < 2 then
   	 thirddata.handlecsv.gCurrentLinePointer[csvfile] = 1
@@ -707,8 +737,9 @@ function thirddata.handlecsv.previouslineof(csvfile)
      context([[\global\notEOFtrue%]])
 end
 
--- Move line pointer to previous line.
+
 function thirddata.handlecsv.previousline()
+-- Move line pointer to previous line.
  local csvfile=thirddata.handlecsv.getcurrentcsvfilename()
  thirddata.handlecsv.previouslineof(csvfile)
 end
@@ -725,30 +756,33 @@ function thirddata.handlecsv.setlinepointerof(csvfile,numberofline)
   thirddata.handlecsv.readlineof(csvfile,numberofline)
 end
 
+
 function thirddata.handlecsv.setlinepointer(numberofline)
  local csvfile=thirddata.handlecsv.getcurrentcsvfilename()
  thirddata.handlecsv.setlinepointerof(csvfile,numberofline)
 end
+
 
 function thirddata.handlecsv.savelinepointer()
   local csvfile=thirddata.handlecsv.getcurrentcsvfilename()
   thirddata.handlecsv.gSavedLinePointerNo = thirddata.handlecsv.gCurrentLinePointer[csvfile]
 end
 
+
 function thirddata.handlecsv.setsavedlinepointer()
   thirddata.handlecsv.setlinepointer(thirddata.handlecsv.gSavedLinePointerNo)
 end
 
 
--- Take pointer to first row of table
 function thirddata.handlecsv.resetlinepointerof(csvfile)
+-- Take pointer to first row of table
  local csvfile=thirddata.handlecsv.handlecsvfile(csvfile)
   thirddata.handlecsv.setlinepointerof(csvfile,1)
 end
 
 
--- Take pointer to first row of table
 function thirddata.handlecsv.resetlinepointer()
+-- Take pointer to first row of table
  local csvfile=thirddata.handlecsv.getcurrentcsvfilename()
   thirddata.handlecsv.setlinepointerof(csvfile,1)
 end
@@ -765,14 +799,15 @@ function thirddata.handlecsv.linepointer()
   return thirddata.handlecsv.gCurrentLinePointer[csvfile]
 end
 
+
 function thirddata.handlecsv.getcurrentlinepointer() -- for compatibility
   return thirddata.handlecsv.linepointer()
 end
 
+
 function thirddata.handlecsv.getlinepointer() -- for compatibility
   return thirddata.handlecsv.linepointer()
 end
-
 
 
 function thirddata.handlecsv.setnumlineof(csvfile,numline)
@@ -819,15 +854,15 @@ local csvfile=thirddata.handlecsv.getcurrentcsvfilename()
 end
 
 
--- Move numline pointer to next number.
 function thirddata.handlecsv.nextnumlineof(csvfile)
+-- Move numline pointer to next number.
 local csvfile=thirddata.handlecsv.handlecsvfile(csvfile)
   thirddata.handlecsv.gNumLine[csvfile]=thirddata.handlecsv.gNumLine[csvfile]+1
 end
 
 
--- Move numline pointer to next number.
 function thirddata.handlecsv.nextnumline()
+-- Move numline pointer to next number.
 local csvfile=thirddata.handlecsv.getcurrentcsvfilename()
   thirddata.handlecsv.gNumLine[csvfile]=thirddata.handlecsv.gNumLine[csvfile]+1
 end
@@ -856,7 +891,6 @@ return thirddata.handlecsv.gNumRows[thirddata.handlecsv.getcurrentcsvfilename()]
 end
 
 
-
 function thirddata.handlecsv.numcolsof(csvfile)
 local csvfile=thirddata.handlecsv.handlecsvfile(csvfile)
   context(thirddata.handlecsv.gNumCols[csvfile])
@@ -869,10 +903,8 @@ local csvfile=thirddata.handlecsv.getcurrentcsvfilename()
 end
 
 
-
-
--- initialize ConTeXt hooks
 function thirddata.handlecsv.resethooks()
+-- initialize ConTeXt hooks
  context([[%
  	\letvalue{blinehook}=\relax%
    \letvalue{elinehook}=\relax%
@@ -884,9 +916,8 @@ function thirddata.handlecsv.resethooks()
 end
 
 
-
--- for safety writen
 function thirddata.handlecsv.string2context(str2ctx)
+-- for safety writen
   local s=str2ctx
   s=string.gsub(s, "%%(.-)\n", "\n")  -- remove TeX comments from string. From % character to the end of line
   -- s=string.gsub(s, '\n', "")
@@ -1014,41 +1045,31 @@ local string2print=[[%
 
 
 
-% Get content of specific cell of CSV table.
-% Calling: \csvcell[column number,row number] OR \csvcell['ColumnName',row number]
+% Get content of specific cell of CSV table. Calling: \csvcell[column number,row number] OR \csvcell['ColumnName',row number]
 \def\getcsvcell[#1,#2]{\ctxlua{context(thirddata.handlecsv.getcellcontent(#1,#2))}}%
 %%%%%\def\getcsvcell[#1,#2]{\if!#2!\ctxlua{context(thirddata.handlecsv.getcellcontent(#1,thirddata.handlecsv.gCurrentLinePointer[thirddata.handlecsv.getcurrentcsvfilename()]))}\else\ctxlua{context(thirddata.handlecsv.getcellcontent(#1,#2))}\fi}%
 
-% Get content of specific cell of CSV table in file.
-% Calling: \getcsvcellof[file][column number,row number] OR \getcsvcellof[file]['ColumnName',row number]
+% Get content of specific cell of CSV table. Calling: \csvcell[column number,row number] OR \csvcell['ColumnName',row number]
 \def\getcsvcellof[#1][#2,#3]{\ctxlua{context(thirddata.handlecsv.getcellcontentof("#1",#2,#3))}}%
 
 
-% Get content of specific cell of CSV table. 
-% Calling: \csvcell[column number,row number or row number getting from macro] OR \csvcell['ColumnName',row number or row number getting from macro]
+% Get content of specific cell of CSV table. Calling: \csvcell[column number,row number or row number getting from macro] OR \csvcell['ColumnName',row number or row number getting from macro]
 \def\csvcell[#1,#2]{\getcsvcell[#1,\the\numexpr(#2+0)]}%
 %\def\csvcell\getcsvcell
 
 
-% Get content of specific cell of current line of CSV table.
-% Calling: \currentcell{column number} OR \currentcell{'ColumnName'}
+% Get content of specific cell of current line of CSV table. Calling: \currentcell{column number} OR \currentcell{'ColumnName'}
 \def\currentcsvcell#1{\getcsvcell[#1,\thenumexpr{\linepointer}]}%
 \let\currcell\currentcsvcell
 
-% Get content of specific cell of next line of CSV table.
-% Calling: \nextcell{column number} OR \nextcell{'ColumnName'}
+% Get content of specific cell of next line of CSV table. Calling: \nextcell{column number} OR \nextcell{'ColumnName'}
 \def\nextcsvcell#1{\ifnum\linepointer<\numrows{\getcsvcell[#1,\thenumexpr{\linepointer+1}]}\fi}%
 \let\nextcell\nextcsvcell
 
-% Get content of specific cell of previous line of CSV table.
-% Calling: \previouscell{column number} OR \previouscell{'ColumnName'}
+% Get content of specific cell of previous line of CSV table. Calling: \previouscell{column number} OR \previouscell{'ColumnName'}
 \def\previouscsvcell#1{\ifnum\linepointer>1{\getcsvcell[#1,\thenumexpr{\linepointer-1}]}\fi}%
 \let\prevcell\previouscsvcell
 
-% Get text content from cell in current row (removes commands, required for --argument)
-% Calling: \gettextfrom[column number]
-\def\gettextfrom[#1]{%
-    \ctxlua{context(thirddata.handlecsv.getcellcontent(#1,thirddata.handlecsv.linepointer()):gsub("\\",""))}}%
 
 % Get column name of n-th column of CSV table. When is set header, then get headername else get XLSname
 \def\colnameof[#1][#2]{\ctxlua{context(thirddata.handlecsv.gColumnNames['#1'][#2])}}%
@@ -1076,6 +1097,8 @@ local string2print=[[%
 %\ctxlua{context(tostring(thirddata.handlecsv.getcellcontent(#1,8)))}
 }%
 
+% Substitution of text #2 in cell content by text #3. Substitution is done in the current column of column #1 (number, XLS name or cX name)
+\def\replacecontentin#1#2#3{\ctxlua{context(thirddata.handlecsv.substitutecontentofcellofcurrentrow('#1','#2','#3'))}}%
 
 % Get number from XLS column name (ie n-th column)
 \def\numberxlscolname[#1]{\ctxlua{context(thirddata.handlecsv.xls2ar(#1))}}%
@@ -1338,7 +1361,6 @@ local string2print=[[%
 % \getcsvcell[<columnnumber or columnname>,<rownumber>], \csvcell[<columnnumber or columnname>,<rownumber>]
 % \currentcell{<columnnumber or columnname}, \nextcell{<columnnumber or columnname}, \previouscell{<columnnumber or columnname}
 % and their synonyms \currcell{}, \nextcell{}, \prevcell{}
-% \gettextfrom[<columnumber>]
 % \colname[numberofcolumn], \xlscolname[<numberofcolumn>], \cxlscolname[<numberofcolumn>], \texcolname[<numberofcolumn>]
 % \indexcolname[<'columnname' or 'xlsname'>]
 % \columncontent[<numberofcolumn> or <'columnname'> or <'xlsname'>]
@@ -1356,6 +1378,7 @@ local string2print=[[%
 % \opencsvfile, \opencsvfile{<filename>}, \closecsvfile{<filename>}
 % \readline, \readline{<numberofline>}
 % \readandprocessparameters#1#2#3#4 -- for internal use only
+% \replacecontentin{<colname/colnumber>}{<substitutefrom>}{<substituteto>}
 %
 %  Module predefined cycles for processing of lines CSV table:
 % \doloopfromto{<fromnumblerline>}{<tonumblerline}{<\actionmacro>}
