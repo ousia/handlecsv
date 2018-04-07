@@ -68,7 +68,7 @@ local string2print=[[%
 \def\addleading#1#2#3{\ctxlua{context(thirddata.handlecsv.addleadingcharacters('#1','#2','#3'))}}
 \def\addzeros#1#2{\ctxlua{context(thirddata.handlecsv.addleadingzeros('#1','#2'))}}
 \def\zeroed#1{\ctxlua{context(thirddata.handlecsv.addzeros('#1'))}}
-\def\zeroedlineno{\ctxlua{context(string.rep( "0",(tostring(thirddata.handlecsv.numrows())):len() - (tostring(thirddata.handlecsv.linepointer())):len()) .. thirddata.handlecsv.linepointer())}}% from Pablo
+\def\zeroedlineno{\zeroed{\lineno}}% from Pablo (and simplified by him)
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
