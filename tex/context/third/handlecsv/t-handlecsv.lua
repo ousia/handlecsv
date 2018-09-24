@@ -1,6 +1,6 @@
 -- %D \module
 -- %D   [     file=t-handlecsv.lua,
--- %D      version=2018.02.26,
+-- %D      version=2018.09.24,
 -- %D        title=HandleCSV module,
 -- %D     subtitle=CSV file handling,
 -- %D       author=Jaroslav Hajtmar,
@@ -796,7 +796,9 @@ end
 
 function thirddata.handlecsv.linepointer()
  local csvfile=thirddata.handlecsv.getcurrentcsvfilename()
-  return thirddata.handlecsv.gCurrentLinePointer[csvfile]
+ -- return thirddata.handlecsv.gCurrentLinePointer[csvfile] -- cause problem with decimal point for higher versions of Lua
+ -- return math.tointeger(thirddata.handlecsv.gCurrentLinePointer[csvfile]) -- cause incompatibility for lower version of Lua
+ return math.floor(tonumber(thirddata.handlecsv.gCurrentLinePointer[csvfile])) -- compatible with lower and higher versions of Lua
 end
 
 
