@@ -1,6 +1,6 @@
 -- %D \module
 -- %D   [     file=t-handlecsv.lua,
--- %D      version=2018.09.24,
+-- %D      version=2019.03.30,
 -- %D        title=HandleCSV module,
 -- %D     subtitle=CSV file handling,
 -- %D       author=Jaroslav Hajtmar,
@@ -9,7 +9,7 @@
 -- %D        email=hajtmar@gyza.cz,
 -- %D      license=GNU General Public License]
 --
--- %C Copyright (C) 2018 Jaroslav Hajtmar
+-- %C Copyright (C) 2019 Jaroslav Hajtmar
 -- %C
 -- %C This program is free software: you can redistribute it and/or modify
 -- %C it under the terms of the GNU General Public License as published by
@@ -1194,9 +1194,9 @@ local string2print=[[%
  	\edef\thirdparam{#3}%
  	\def\fourthparam{#4}%
  	\edef\paroperator{#2}%
-%  operator '==' is for strings comparing converted to 'eq' operator
+ %  operator '==' is for strings comparing converted to 'eq' operator; a blank space before the percent sign is strictly required!!!
    \ctxlua{if '#2'=="==" and not(type(tonumber('#1'))=='number' and type(tonumber('#3'))=='number') then context('\\def\\paroperator{eq}') end}%
-%  operator '~=' is for strings comparing converted to 'neq' operator
+ %  operator '~=' is for strings comparing converted to 'neq' operator; a blank space before the percent sign is strictly required !!!
    \ctxlua{if '#2'=="~=" and not(type(tonumber('#1'))=='number' and type(tonumber('#3'))=='number') then context('\\def\\paroperator{neq}') end}%
 }%
 
@@ -1263,6 +1263,7 @@ local string2print=[[%
 \def\doloopif#1#2#3#4{%
 	\edef\tempnumline{\numline}% 23.6.2017
     \readandprocessparameters{#1}{#2}{#3}{#4}%
+    \removeunwantedspaces% 25.3.2019
     % \resetnumline % 22.6.2017
     \bfilehook%
     % and now process actual operator
@@ -1303,11 +1304,12 @@ local string2print=[[%
 	 \doloop{\ctxlua{if '#1'=='#3' then context('\\exitloop') else context('\\ifEOF\\exitloop\\else\\blinehook\\fourthparam\\elinehook\\nextrow\\fi') end}}%
      },% end until % the comma , is very important here!!!
      whiledo=>{% {substring}{untilneq}{string} ... % Repeat action when the condition is met. When the condition is not met for the first line, the action will NOT BE performed!
-	 \doloop{\ctxlua{if '#1'~='#3' then context('\\exitloop') else context('\\blinehook\\fourthparam\\elinehook\\ifEOF\\exitloop\\else\\nextrow\\fi') end}}%
+	 \doloop{\ctxlua{if '#1'~='#3' then context('\\exitloop') else context('\\removeunwantedspaces\\blinehook\\fourthparam\\elinehook\\ifEOF\\exitloop\\else\\nextrow\\fi') end}}%
      },% end untilneq % the comma , is very important here!!!
     ]% end of \processaction%
   \efilehook%
   \setnumline{\tempnumline}%
+  \removeunwantedspaces% 30.3.2019
 } % end of \doloopif
 
 
