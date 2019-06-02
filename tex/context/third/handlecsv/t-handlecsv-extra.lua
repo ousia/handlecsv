@@ -1,14 +1,14 @@
 -- %D \module
 -- %D   [     file=t-handlecsv-extra.lua,
--- %D      version=2019.06.27,
+-- %D      version=2019.05.27,
 -- %D        title=HandleCSV extra,
 -- %D     subtitle=CSV file analysis - extended functions and macros,
 -- %D       author=Jaroslav Hajtmar,
--- %D         date=2019-06-27,
+-- %D         date=2019-05-27,
 -- %D    copyright=Jaroslav Hajtmar,
 -- %D      license=GNU General Public License]
 --
--- %C Copyright (C) 2018  Jaroslav Hajtmar
+-- %C Copyright (C) 2019  Jaroslav Hajtmar
 -- %C
 -- %C This program is free software: you can redistribute it and/or modify
 -- %C it under the terms of the GNU General Public License as published by
