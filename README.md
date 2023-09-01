@@ -1,5 +1,7 @@
 # `handlecsv`
 
+Just archived and moved to https://gitlab.com/ousia/context-handlecsv.
+
 This is the public repository of the `handlecsv` module for ConTeXt.
 
 If you found a bug, please report an issue.
